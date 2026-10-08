@@ -1,0 +1,31 @@
+.runTransformations
+.#-------------------------------------------------------------------------------------------------------
+.input|xwiki/2.1
+.# Verify that the output of the converted macro calls is discarded, and that their editable content is preserved.
+.#-------------------------------------------------------------------------------------------------------
+{{warning}}
+Be **careful**.
+{{/warning}}
+
+After.
+.#-----------------------------------------------------
+.expect|blocknote/1.0
+.#-----------------------------------------------------
+[ {
+  "type" : "quote",
+  "props" : {
+    "xwikiWarning" : true,
+    "xwikiParameters" : { }
+  },
+  "content" : [ "Be ", {
+    "type" : "text",
+    "styles" : {
+      "bold" : true
+    },
+    "text" : "careful"
+  }, "." ]
+}, {
+  "type" : "paragraph",
+  "props" : { },
+  "content" : "After."
+} ]

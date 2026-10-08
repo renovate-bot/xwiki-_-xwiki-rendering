@@ -1,0 +1,48 @@
+.#-------------------------------------------------------------------------------------------------------
+.input|xwiki/2.1
+.# Verify that macro calls are converted to dedicated blocks when there is a converter that supports them.
+.#-------------------------------------------------------------------------------------------------------
+{{warning title="Note"}}Be **careful**.{{/warning}}
+
+{{warning image="false"}}Not converted{{/warning}}
+
+Inline {{warning}}not converted{{/warning}} macro.
+.#-----------------------------------------------------
+.expect|blocknote/1.0
+.#-----------------------------------------------------
+[ {
+  "type" : "quote",
+  "props" : {
+    "xwikiWarning" : true,
+    "xwikiParameters" : {
+      "title" : "Note"
+    }
+  },
+  "content" : "Be **careful**."
+}, {
+  "type" : "xwikiMacroBlock",
+  "props" : {
+    "call" : {
+      "name" : "warning",
+      "parameters" : {
+        "image" : "false"
+      },
+      "content" : "Not converted"
+    },
+    "output" : [ ]
+  }
+}, {
+  "type" : "paragraph",
+  "props" : { },
+  "content" : [ "Inline ", {
+    "type" : "xwikiInlineMacro",
+    "props" : {
+      "call" : {
+        "name" : "warning",
+        "parameters" : { },
+        "content" : "not converted"
+      },
+      "output" : [ ]
+    }
+  }, " macro." ]
+} ]

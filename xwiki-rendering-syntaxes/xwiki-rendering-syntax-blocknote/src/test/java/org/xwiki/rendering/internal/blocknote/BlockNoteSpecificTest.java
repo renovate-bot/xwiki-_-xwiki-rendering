@@ -43,6 +43,7 @@ public class BlockNoteSpecificTest extends RenderingTest
     public void initialize(MockitoComponentManager componentManager) throws Exception
     {
         componentManager.registerComponent(MockWikiModel.getComponentDescriptor());
+        componentManager.registerComponent(TestMacroBlockNoteConverter.class);
 
         DefaultRenderingConfiguration renderingConfiguration =
             componentManager.getInstance(RenderingConfiguration.class);

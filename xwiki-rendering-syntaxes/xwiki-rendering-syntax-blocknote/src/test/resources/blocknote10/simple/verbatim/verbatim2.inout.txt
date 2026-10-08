@@ -1,5 +1,9 @@
 [ {
   "type" : "codeBlock",
-  "props" : { },
+  "props" : {
+    "xwikiLeadingNewLine" : false,
+    "xwikiTrailingNewLine" : false,
+    "xwikiVerbatim" : true
+  },
   "content" : "verbatim"
 } ]

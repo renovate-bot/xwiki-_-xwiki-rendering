@@ -21,7 +21,13 @@ package org.xwiki.rendering.internal.renderer.blocknote;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.xwiki.component.manager.ComponentLookupException;
+import org.xwiki.component.manager.ComponentManager;
+import org.xwiki.rendering.blocknote.BlockNoteMacroConverter;
 import org.xwiki.rendering.internal.parser.blocknote.blocks.AbstractBlockParser;
 import org.xwiki.rendering.listener.MetaData;
 import org.xwiki.rendering.listener.chaining.AbstractChainingListener;
@@ -62,15 +68,23 @@ public class MacroChainingListener extends AbstractChainingListener
 
     private final Context context;
 
+    private final ComponentManager componentManager;
+
+    private final Logger logger;
+
     /**
      * Creates a new instance using the provided listener chain.
      * 
      * @param listenerChain the listener chain
+     * @param componentManager the component manager used to look up the macro converters
+     * @param logger the logger used to report macro conversion failures
      */
-    public MacroChainingListener(ListenerChain listenerChain)
+    public MacroChainingListener(ListenerChain listenerChain, ComponentManager componentManager, Logger logger)
     {
         setListenerChain(listenerChain);
         this.context = new Context(listenerChain);
+        this.componentManager = componentManager;
+        this.logger = logger;
     }
 
     @Override
@@ -142,7 +156,49 @@ public class MacroChainingListener extends AbstractChainingListener
     @Override
     public void endMacroMarker(String name, Map<String, String> parameters, String content, boolean isInline)
     {
-        this.context.getBlockNoteState().endBlock();
+        JsonNode macroBlock = this.context.getBlockNoteState().endBlock();
+        if (macroBlock instanceof ObjectNode macroBlockObject && isMacroBlock(macroBlockObject)) {
+            maybeConvertMacroBlock(name, macroBlockObject);
+        }
+    }
+
+    private boolean isMacroBlock(ObjectNode block)
+    {
+        String type = block.path(TYPE).asText();
+        return MACRO.equals(type) || INLINE_MACRO.equals(type);
+    }
+
+    /**
+     * Replaces the given macro block with the dedicated BlockNote block provided by the converter associated with the
+     * given macro, if any.
+     *
+     * @param macroId the macro identifier
+     * @param macroBlock the macro block to convert
+     */
+    private void maybeConvertMacroBlock(String macroId, ObjectNode macroBlock)
+    {
+        Optional<ObjectNode> block = Optional.empty();
+        if (this.componentManager != null
+            && this.componentManager.hasComponent(BlockNoteMacroConverter.class, macroId)) {
+            try {
+                block = this.componentManager.<BlockNoteMacroConverter>getInstance(BlockNoteMacroConverter.class,
+                    macroId).toBlock(macroBlock);
+            } catch (ComponentLookupException e) {
+                this.logger.warn("Failed to look up the BlockNote converter for macro [{}]. Root cause is [{}].",
+                    macroId, ExceptionUtils.getRootCauseMessage(e));
+            }
+        }
+        if (block.isPresent()) {
+            JsonNode parent = this.context.getBlockNoteState().getBlockNotePath().peek();
+            if (parent instanceof ArrayNode siblings) {
+                for (int i = 0; i < siblings.size(); i++) {
+                    if (siblings.get(i) == macroBlock) {
+                        siblings.set(i, block.get());
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     @Override

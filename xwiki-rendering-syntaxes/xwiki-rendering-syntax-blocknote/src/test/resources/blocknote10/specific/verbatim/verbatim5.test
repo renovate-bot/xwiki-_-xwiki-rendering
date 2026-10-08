@@ -1,0 +1,39 @@
+.#-------------------------------------------------------------------------------------------------------
+.inputexpect|blocknote/1.0
+.# Verify that the new lines at the start and at the end of the verbatim content are added on save, unless the code
+.# block indicates that they were not present.
+.#-------------------------------------------------------------------------------------------------------
+[ {
+  "type" : "codeBlock",
+  "props" : {
+    "xwikiVerbatim" : true
+  },
+  "content" : "test"
+}, {
+  "type" : "codeBlock",
+  "props" : {
+    "xwikiLeadingNewLine" : false,
+    "xwikiTrailingNewLine" : false,
+    "xwikiVerbatim" : true
+  },
+  "content" : "test"
+}, {
+  "type" : "codeBlock",
+  "props" : {
+    "xwikiTrailingNewLine" : false,
+    "xwikiVerbatim" : true
+  },
+  "content" : "\ntest"
+} ]
+.#-----------------------------------------------------
+.expect|xwiki/2.1
+.#-----------------------------------------------------
+{{{
+test
+}}}
+
+{{{test}}}
+
+{{{
+
+test}}}

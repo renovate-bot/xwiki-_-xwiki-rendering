@@ -1,0 +1,39 @@
+.#-------------------------------------------------------------------------------------------------------
+.input|xwiki/2.1
+.# Verify that only the new lines at the start and at the end of the verbatim content are hidden in the code block,
+.# like in view mode, and that the code block remembers whether they were present.
+.#-------------------------------------------------------------------------------------------------------
+{{{
+test
+}}}
+
+{{{test}}}
+
+{{{
+
+test}}}
+.#-----------------------------------------------------
+.expect|blocknote/1.0
+.#-----------------------------------------------------
+[ {
+  "type" : "codeBlock",
+  "props" : {
+    "xwikiVerbatim" : true
+  },
+  "content" : "test"
+}, {
+  "type" : "codeBlock",
+  "props" : {
+    "xwikiLeadingNewLine" : false,
+    "xwikiTrailingNewLine" : false,
+    "xwikiVerbatim" : true
+  },
+  "content" : "test"
+}, {
+  "type" : "codeBlock",
+  "props" : {
+    "xwikiTrailingNewLine" : false,
+    "xwikiVerbatim" : true
+  },
+  "content" : "\ntest"
+} ]

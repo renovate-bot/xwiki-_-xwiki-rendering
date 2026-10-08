@@ -23,12 +23,19 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 import org.xwiki.component.annotation.Component;
+import org.xwiki.component.manager.ComponentLookupException;
+import org.xwiki.component.manager.ComponentManager;
+import org.xwiki.rendering.blocknote.BlockNoteMacroConverter;
 import org.xwiki.rendering.internal.parser.blocknote.blocks.AbstractBlockParser;
 import org.xwiki.rendering.internal.parser.blocknote.blocks.BlockParser;
 import org.xwiki.rendering.listener.Listener;
@@ -57,6 +64,10 @@ public class BlockNoteStreamParser implements StreamParser
     @Inject
     @Named("root")
     private BlockParser rootBlockParser;
+
+    @Inject
+    @Named("context")
+    private Provider<ComponentManager> componentManagerProvider;
 
     @Override
     public Syntax getSyntax()
@@ -89,7 +100,19 @@ public class BlockNoteStreamParser implements StreamParser
         root.set(AbstractBlockParser.CHILDREN, blocks);
 
         Deque<Context> contextStack = new LinkedList<>();
-        contextStack.push(new Context(listener, idGenerator, false, null, objectMapper.createArrayNode(), null));
+        contextStack.push(new Context(listener, idGenerator, false, null, objectMapper.createArrayNode(), null,
+            getMacroConverters()));
         this.rootBlockParser.parse(root, contextStack);
+    }
+
+    private Map<String, List<BlockNoteMacroConverter>> getMacroConverters() throws ParseException
+    {
+        try {
+            return this.componentManagerProvider.get().<BlockNoteMacroConverter>getInstanceList(
+                BlockNoteMacroConverter.class).stream()
+                .collect(Collectors.groupingBy(BlockNoteMacroConverter::getBlockType));
+        } catch (ComponentLookupException e) {
+            throw new ParseException("Failed to look up the BlockNote macro converters.", e);
+        }
     }
 }

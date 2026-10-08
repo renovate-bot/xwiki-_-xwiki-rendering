@@ -35,6 +35,9 @@ import static org.xwiki.rendering.internal.parser.blocknote.blocks.AbstractBlock
 import static org.xwiki.rendering.internal.parser.blocknote.blocks.AbstractBlockParser.PROPS;
 import static org.xwiki.rendering.internal.parser.blocknote.blocks.CodeBlockParser.CODE;
 import static org.xwiki.rendering.internal.parser.blocknote.blocks.CodeBlockParser.LANGUAGE;
+import static org.xwiki.rendering.internal.parser.blocknote.blocks.CodeBlockParser.LEADING_NEW_LINE;
+import static org.xwiki.rendering.internal.parser.blocknote.blocks.CodeBlockParser.TRAILING_NEW_LINE;
+import static org.xwiki.rendering.internal.parser.blocknote.blocks.CodeBlockParser.VERBATIM;
 import static org.xwiki.rendering.internal.parser.blocknote.blocks.CodeBlockParser.VERBATIM_LANGUAGE;
 
 /**
@@ -45,6 +48,8 @@ import static org.xwiki.rendering.internal.parser.blocknote.blocks.CodeBlockPars
  */
 public class TextChainingListener extends AbstractChainingListener
 {
+    private static final String NEW_LINE = "\n";
+
     private final Context context;
 
     private int plainTextRenderingNestingLevel;
@@ -106,9 +111,35 @@ public class TextChainingListener extends AbstractChainingListener
             if (parameters.containsKey(VERBATIM_LANGUAGE)) {
                 codeProperties.put(LANGUAGE, parameters.get(VERBATIM_LANGUAGE));
             }
-            code.put(CONTENT, content);
+            code.put(CONTENT, stripNewLines(content, codeProperties));
+            codeProperties.put(VERBATIM, true);
             this.context.getBlockNoteState().endBlock();
         }
+    }
+
+    /**
+     * Removes the new line at the start and at the end of the verbatim content, because browsers don't display them in
+     * view mode (inside a {@code pre} element). The code block properties remember whether these new lines were
+     * present.
+     *
+     * @param content the verbatim content
+     * @param codeProperties the code block properties
+     * @return the code block content
+     */
+    private String stripNewLines(String content, ObjectNode codeProperties)
+    {
+        String code = content;
+        if (code.startsWith(NEW_LINE)) {
+            code = code.substring(1);
+        } else {
+            codeProperties.put(LEADING_NEW_LINE, false);
+        }
+        if (code.endsWith(NEW_LINE)) {
+            code = code.substring(0, code.length() - 1);
+        } else {
+            codeProperties.put(TRAILING_NEW_LINE, false);
+        }
+        return code;
     }
 
     @Override

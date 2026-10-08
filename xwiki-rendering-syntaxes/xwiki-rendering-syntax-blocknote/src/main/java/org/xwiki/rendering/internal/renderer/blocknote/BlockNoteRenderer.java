@@ -78,7 +78,7 @@ public class BlockNoteRenderer extends AbstractChainingPrintRenderer implements 
         chain.addListener(new TypographyChainingListener(chain));
         chain.addListener(new ListChainingListener(chain));
         chain.addListener(new TableChainingListener(chain));
-        chain.addListener(new MacroChainingListener(chain));
+        chain.addListener(new MacroChainingListener(chain, componentManager, this.logger));
         chain.addListener(new ImageChainingListener(chain, wikiModel));
         chain.addListener(
             new InlineContentChainingListener(chain, wikiModel, this.renderingConfiguration, componentManager));

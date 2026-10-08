@@ -38,6 +38,7 @@ import org.jspecify.annotations.NonNull;
 import org.xwiki.component.manager.ComponentLifecycleException;
 import org.xwiki.component.manager.ComponentManager;
 import org.xwiki.component.phase.Disposable;
+import org.xwiki.rendering.blocknote.BlockNoteMacroConverter;
 import org.xwiki.rendering.internal.blocknote.BlockNoteObjectMapper;
 import org.xwiki.rendering.internal.parser.blocknote.Context;
 import org.xwiki.rendering.internal.parser.blocknote.PlainTextWrappingListener;
@@ -199,10 +200,30 @@ public abstract class AbstractBlockParser implements BlockParser, Disposable
         if (block.path(SKIP).asBoolean()) {
             return Optional.empty();
         } else {
-            BlockParser blockParser = getBlockParser(getBlockType(block));
-            blockParser.parse(block, contextStack);
+            ObjectNode blockToParse = maybeConvertToMacro(block, contextStack);
+            BlockParser blockParser = getBlockParser(getBlockType(blockToParse));
+            blockParser.parse(blockToParse, contextStack);
             return Optional.of(blockParser::onParentBlockEnd);
         }
+    }
+
+    /**
+     * Some macro calls are converted to dedicated BlockNote blocks when rendered, so we need to convert these blocks
+     * back to macro calls when parsing.
+     *
+     * @param block the block to convert
+     * @param contextStack the context stack
+     * @return the macro block obtained by converting the given block, or the given block if no converter supports it
+     */
+    private ObjectNode maybeConvertToMacro(ObjectNode block, Deque<Context> contextStack) throws ParseException
+    {
+        for (BlockNoteMacroConverter converter : contextStack.peek().getMacroConverters(getBlockType(block))) {
+            Optional<ObjectNode> macroBlock = converter.toMacro(block);
+            if (macroBlock.isPresent()) {
+                return macroBlock.get();
+            }
+        }
+        return block;
     }
 
     private String getBlockType(ObjectNode block) throws ParseException

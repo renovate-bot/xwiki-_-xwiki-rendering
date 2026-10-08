@@ -59,6 +59,37 @@ public class CodeBlockParser extends AbstractBlockParser
      */
     public static final String VERBATIM_LANGUAGE = "data-xwiki-verbatim-language";
 
+    /**
+     * The code block property that indicates whether the verbatim content starts with a new line that is not part of
+     * the code block content. Browsers ignore the new line right after the start tag of a {@code pre} element, so the
+     * canonical {@code {{{\ncode\n}}}} verbatim syntax is displayed without empty lines around the code. We do the same
+     * in the code block, so that it looks the same in edit and view mode. Missing means {@code true}.
+     *
+     * @since 18.9.0RC1
+     */
+    public static final String LEADING_NEW_LINE = "xwikiLeadingNewLine";
+
+    /**
+     * The code block property that indicates whether the verbatim content ends with a new line that is not part of the
+     * code block content. Browsers don't display an empty line for the new line at the end of a {@code pre} element.
+     * Missing means {@code true}.
+     *
+     * @see #LEADING_NEW_LINE
+     * @since 18.9.0RC1
+     */
+    public static final String TRAILING_NEW_LINE = "xwikiTrailingNewLine";
+
+    /**
+     * The code block property that indicates that the code block was produced from a verbatim block. Code blocks can
+     * also be produced from macro calls (see {@link org.xwiki.rendering.blocknote.BlockNoteMacroConverter}), in which
+     * case they are saved back as macro calls, unless this property is {@code true}. Missing means {@code false}.
+     *
+     * @since 18.9.0RC1
+     */
+    public static final String VERBATIM = "xwikiVerbatim";
+
+    private static final String NEW_LINE = "\n";
+
     @Override
     public void parse(ObjectNode codeBlock, Deque<Context> contextStack) throws ParseException
     {
@@ -67,7 +98,15 @@ public class CodeBlockParser extends AbstractBlockParser
         if (language.isTextual()) {
             parameters.put(VERBATIM_LANGUAGE, language.asText());
         }
-        String code = getTextContent(codeBlock);
-        contextStack.peek().listener().onVerbatim(code, false, parameters);
+        StringBuilder code = new StringBuilder();
+        JsonNode properties = codeBlock.path(PROPS);
+        if (properties.path(LEADING_NEW_LINE).asBoolean(true)) {
+            code.append(NEW_LINE);
+        }
+        code.append(getTextContent(codeBlock));
+        if (properties.path(TRAILING_NEW_LINE).asBoolean(true)) {
+            code.append(NEW_LINE);
+        }
+        contextStack.peek().listener().onVerbatim(code.toString(), false, parameters);
     }
 }

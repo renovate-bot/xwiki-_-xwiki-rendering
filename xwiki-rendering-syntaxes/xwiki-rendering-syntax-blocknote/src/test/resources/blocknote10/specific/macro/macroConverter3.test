@@ -1,0 +1,32 @@
+.#-------------------------------------------------------------------------------------------------------
+.input|blocknote/1.0
+.# Verify that blocks are converted back to macro calls when there is a converter that supports them.
+.#-------------------------------------------------------------------------------------------------------
+[ {
+  "type" : "quote",
+  "props" : {
+    "xwikiWarning" : true,
+    "xwikiParameters" : {
+      "title" : "Note"
+    }
+  },
+  "content" : [ "Be ", {
+    "type" : "text",
+    "styles" : {
+      "bold" : true
+    },
+    "text" : "careful"
+  }, "." ]
+}, {
+  "type" : "quote",
+  "props" : { },
+  "content" : "Not converted"
+} ]
+.#-----------------------------------------------------
+.expect|xwiki/2.1
+.#-----------------------------------------------------
+{{warning title="Note"}}
+Be **careful**.
+{{/warning}}
+
+>Not converted

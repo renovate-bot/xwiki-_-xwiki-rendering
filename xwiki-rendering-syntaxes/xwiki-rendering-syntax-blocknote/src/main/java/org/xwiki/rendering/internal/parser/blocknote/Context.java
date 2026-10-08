@@ -19,6 +19,10 @@
  */
 package org.xwiki.rendering.internal.parser.blocknote;
 
+import java.util.List;
+import java.util.Map;
+
+import org.xwiki.rendering.blocknote.BlockNoteMacroConverter;
 import org.xwiki.rendering.listener.HeaderLevel;
 import org.xwiki.rendering.listener.Listener;
 import org.xwiki.rendering.util.IdGenerator;
@@ -37,11 +41,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @param siblings the siblings of the current block being processed
  * @param sectionLevel the section level in the scope of the current parent block, or {@code null} if no section is open
  *            directly under the current parent block
+ * @param macroConverters the converters used to save BlockNote blocks as macro calls, grouped by the type of the
+ *            blocks they convert
  * @version $Id$
  * @since 18.6.0RC1
  */
 public record Context(Listener listener, IdGenerator idGenerator, boolean inline, ObjectNode parent, ArrayNode siblings,
-    HeaderLevel sectionLevel)
+    HeaderLevel sectionLevel, Map<String, List<BlockNoteMacroConverter>> macroConverters)
 {
     /**
      * @param listener the listener to use
@@ -49,7 +55,8 @@ public record Context(Listener listener, IdGenerator idGenerator, boolean inline
      */
     public Context withListener(Listener listener)
     {
-        return new Context(listener, this.idGenerator, this.inline, this.parent, this.siblings, this.sectionLevel);
+        return new Context(listener, this.idGenerator, this.inline, this.parent, this.siblings, this.sectionLevel,
+            this.macroConverters);
     }
 
     /**
@@ -58,7 +65,8 @@ public record Context(Listener listener, IdGenerator idGenerator, boolean inline
      */
     public Context withInline(boolean inline)
     {
-        return new Context(this.listener, this.idGenerator, inline, this.parent, this.siblings, this.sectionLevel);
+        return new Context(this.listener, this.idGenerator, inline, this.parent, this.siblings, this.sectionLevel,
+            this.macroConverters);
     }
 
     /**
@@ -68,7 +76,7 @@ public record Context(Listener listener, IdGenerator idGenerator, boolean inline
      */
     public Context withParentAndSiblings(ObjectNode parent, ArrayNode siblings)
     {
-        return new Context(this.listener, this.idGenerator, this.inline, parent, siblings, null);
+        return new Context(this.listener, this.idGenerator, this.inline, parent, siblings, null, this.macroConverters);
     }
 
     /**
@@ -77,7 +85,17 @@ public record Context(Listener listener, IdGenerator idGenerator, boolean inline
      */
     public Context withSectionLevel(HeaderLevel sectionLevel)
     {
-        return new Context(this.listener, this.idGenerator, this.inline, this.parent, this.siblings, sectionLevel);
+        return new Context(this.listener, this.idGenerator, this.inline, this.parent, this.siblings, sectionLevel,
+            this.macroConverters);
+    }
+
+    /**
+     * @param blockType a BlockNote block type
+     * @return the converters that can save the BlockNote blocks of the given type as macro calls
+     */
+    public List<BlockNoteMacroConverter> getMacroConverters(String blockType)
+    {
+        return this.macroConverters.getOrDefault(blockType, List.of());
     }
 
     /**
